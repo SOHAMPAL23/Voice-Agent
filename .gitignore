@@ -1,0 +1,45 @@
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Backend (Python)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.env
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+*.db
+*.sqlite3
+.venv_backend/
+
+# Frontend (Node/React)
+node_modules/
+dist/
+dist-ssr/
+*.local
+.eslintcache
+.npm
+.yarn-integrity
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Logs
+*.log
+logs/
+
+# OS specific
+Thumbs.db
+ehthumbs.db
+Desktop.ini
