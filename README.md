@@ -1,6 +1,6 @@
 # Nova — Voice-Based AI Agent v2.0
 
-A Siri/Alexa-level intelligent voice assistant with task management, memory, and time-aware scheduling.
+A Intelligent voice assistant with task management, memory, and time-aware scheduling.
 
 ## ✨ Features
 
