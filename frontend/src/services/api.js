@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8000/api';
+const isProd = import.meta.env.PROD;
+const API_URL = isProd ? '/_/backend/api' : 'http://localhost:8000/api';
 const api = axios.create({ baseURL: API_URL });
 
 // ─── Health ──────────────────────────────────────────────────────────────────
