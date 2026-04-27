@@ -26,7 +26,7 @@ export default function ChatInterface() {
 
     recognition.onstart = () => setIsListening(true);
     recognition.onend = () => setIsListening(false);
-    
+
     recognition.onresult = async (event) => {
       const transcript = event.results[0][0].transcript;
       if (transcript) {
@@ -54,7 +54,7 @@ export default function ChatInterface() {
       const history = chatHistory.map(m => ({ role: m.role, content: m.content }));
       const res = await sendChatMessage(text, history);
       addChatMessage({ role: 'agent', content: res.response });
-      
+
       // Refresh data
       const { fetchTodos, fetchMemories } = await import('../services/api');
       const [t, m] = await Promise.all([fetchTodos(), fetchMemories()]);
@@ -90,9 +90,8 @@ export default function ChatInterface() {
               animate={{ opacity: 1, y: 0 }}
               className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
-              <div className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm ${
-                msg.role === 'user' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-100'
-              }`}>
+              <div className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-100'
+                }`}>
                 {msg.content}
               </div>
             </motion.div>

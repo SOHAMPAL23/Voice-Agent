@@ -34,6 +34,7 @@ dist-ssr/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+.vite/
 
 # Logs
 *.log

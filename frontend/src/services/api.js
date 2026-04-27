@@ -1,12 +1,11 @@
 import axios from 'axios';
 
-const isProd = import.meta.env.PROD;
-const API_URL = isProd ? '/_/backend/api' : 'http://localhost:8000/api';
+const API_URL = 'http://localhost:8000/api';
 const api = axios.create({ baseURL: API_URL });
 
 // ─── Health ──────────────────────────────────────────────────────────────────
 export const checkHealth = async () => {
-  const res = await api.get('/health', { timeout: 3000 });
+  const res = await api.get('/health', { timeout: 10000 });
   return res.data;
 };
 
