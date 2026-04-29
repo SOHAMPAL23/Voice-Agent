@@ -11,10 +11,9 @@
       "use": "@vercel/python"
     }
   ],
-  "routes": [
-    { "src": "/api/(.*)", "dest": "/backend/main.py" },
-    { "src": "/(.*)", "dest": "/frontend/$1" },
-    { "handle": "filesystem" },
-    { "src": "/(.*)", "dest": "/frontend/index.html" }
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "backend/main.py" },
+    { "source": "/assets/(.*)", "destination": "/frontend/assets/$1" },
+    { "source": "/(.*)", "destination": "/frontend/index.html" }
   ]
 }
