@@ -20,7 +20,7 @@ export const useAppStore = create((set, get) => ({
   setIsProcessing:(v)        => set({ isProcessing: v }),
 
   addChatMessage: (msg) => set((state) => ({
-    chatHistory: [...state.chatHistory, { ...msg, id: Date.now() }],
+    chatHistory: [...state.chatHistory, { ...msg, id: crypto.randomUUID() }],
   })),
 
   // ─── Optimistic todo updates ──────────────────────────────────────────────
