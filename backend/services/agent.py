@@ -10,11 +10,12 @@ from .time_utils import build_time_context
 RAW_OPENAI_KEY = os.environ.get("OPENAI_API_KEY")
 RAW_GEMINI_KEY = os.environ.get("GEMINI_API_KEY")
 
-API_KEY = RAW_OPENAI_KEY or RAW_GEMINI_KEY
+API_KEY = RAW_OPENAI_KEY or RAW_GEMINI_KEY or "missing_key"
 MODEL = "gpt-4o-mini" 
 
 is_openrouter = str(API_KEY).startswith("sk-or-")
 
+# Initialize client lazily or safely
 if is_openrouter:
     print("[Agent] Config: OpenRouter (via Gemini 2.0 Flash)")
     client = OpenAI(
