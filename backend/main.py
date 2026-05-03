@@ -1,3 +1,7 @@
+import os
+import sys
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,31 +15,32 @@ from models.database import engine, Base, SessionLocal
 from routes import chat
 
 # ─── Create / migrate tables ─────────────────────────────────────────────────
-Base.metadata.create_all(bind=engine)
+try:
+    Base.metadata.create_all(bind=engine)
 
-# Safe migration: add scheduled_time column if it doesn't exist yet
-def run_migrations():
-    with engine.connect() as conn:
-        try:
-            # PostgreSQL syntax to check for column existence
-            check_sql = text("SELECT 1 FROM information_schema.columns WHERE table_name='todos' AND column_name='scheduled_time'")
-            exists = conn.execute(check_sql).fetchone()
-            
-            if not exists:
-                print("[DB] Column 'scheduled_time' missing. Adding it...")
-                conn.execute(text("ALTER TABLE todos ADD COLUMN scheduled_time TIMESTAMP WITH TIME ZONE"))
-                conn.commit()
-                print("[DB] Column 'scheduled_time' added successfully.")
-            else:
-                print("[DB] Migration: 'scheduled_time' column already exists.")
-        except Exception as e:
-            print(f"[DB] Migration note: {e}")
+    def run_migrations():
+        with engine.connect() as conn:
             try:
-                conn.rollback()
-            except:
-                pass
+                check_sql = text("SELECT 1 FROM information_schema.columns WHERE table_name='todos' AND column_name='scheduled_time'")
+                exists = conn.execute(check_sql).fetchone()
+                
+                if not exists:
+                    print("[DB] Column 'scheduled_time' missing. Adding it...")
+                    conn.execute(text("ALTER TABLE todos ADD COLUMN scheduled_time TIMESTAMP WITH TIME ZONE"))
+                    conn.commit()
+                    print("[DB] Column 'scheduled_time' added successfully.")
+                else:
+                    print("[DB] Migration: 'scheduled_time' column already exists.")
+            except Exception as e:
+                print(f"[DB] Migration note: {e}")
+                try:
+                    conn.rollback()
+                except:
+                    pass
 
-run_migrations()
+    run_migrations()
+except Exception as e:
+    print(f"[DB] CRITICAL STARTUP ERROR: Could not initialize database. Error: {e}")
 
 # ─── App ──────────────────────────────────────────────────────────────────────
 app = FastAPI(
