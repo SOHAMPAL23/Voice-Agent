@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, File, Form, UploadFile
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from pydantic import BaseModel
 from typing import Optional, List
 import json
@@ -23,8 +24,25 @@ class ChatResponse(BaseModel):
     response: str
 
 @router.get("/health")
-def health_check():
-    return {"status": "ok", "version": "2.0"}
+def health_check(db: Session = Depends(database.get_db)):
+    from services.agent import API_KEY, MODEL
+    
+    db_ok = False
+    try:
+        db.execute(text("SELECT 1"))
+        db_ok = True
+    except Exception as e:
+        print(f"Health check DB error: {e}")
+
+    return {
+        "status": "ok" if db_ok else "degraded",
+        "version": "2.0.1",
+        "database": "connected" if db_ok else "error",
+        "llm_config": {
+            "model": MODEL,
+            "key_configured": API_KEY != "missing_key"
+        }
+    }
 
 @router.post("/chat", response_model=ChatResponse)
 def chat_endpoint(req: ChatRequest, db: Session = Depends(database.get_db)):
