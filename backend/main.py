@@ -15,10 +15,12 @@ from models.database import engine, Base, SessionLocal
 from routes import chat
 
 # ─── Create / migrate tables ─────────────────────────────────────────────────
-try:
-    Base.metadata.create_all(bind=engine)
+def initialize_db():
+    try:
+        # Create tables if they don't exist
+        Base.metadata.create_all(bind=engine)
 
-    def run_migrations():
+        # Migration for scheduled_time
         with engine.connect() as conn:
             try:
                 check_sql = text("SELECT 1 FROM information_schema.columns WHERE table_name='todos' AND column_name='scheduled_time'")
@@ -32,15 +34,16 @@ try:
                 else:
                     print("[DB] Migration: 'scheduled_time' column already exists.")
             except Exception as e:
-                print(f"[DB] Migration note: {e}")
+                print(f"[DB] Migration note (non-critical): {e}")
                 try:
                     conn.rollback()
                 except:
                     pass
+    except Exception as e:
+        print(f"[DB] CRITICAL STARTUP ERROR: Could not initialize database. Error: {e}")
 
-    run_migrations()
-except Exception as e:
-    print(f"[DB] CRITICAL STARTUP ERROR: Could not initialize database. Error: {e}")
+# Call initialization
+initialize_db()
 
 # ─── App ──────────────────────────────────────────────────────────────────────
 app = FastAPI(
@@ -58,19 +61,29 @@ app.add_middleware(
 )
 
 @app.middleware("http")
-async def catch_exceptions_middleware(request: Request, call_next):
+async def log_and_catch_exceptions(request: Request, call_next):
+    # Log incoming request path (useful for debugging Vercel rewrites)
+    print(f"[API] Request: {request.method} {request.url.path}")
     try:
-        return await call_next(request)
+        response = await call_next(request)
+        return response
     except Exception as e:
         import traceback
         print(f"CRITICAL BACKEND ERROR: {e}")
         traceback.print_exc()
         return JSONResponse(
             status_code=500,
-            content={"detail": f"Backend Error: {str(e)}"},
+            content={
+                "detail": "Internal Server Error",
+                "message": str(e),
+                "path": request.url.path
+            },
         )
 
+# Include routers
+# We include it twice or with prefix to handle both /api/chat and /chat if rewrites vary
 app.include_router(chat.router, prefix="/api")
+app.include_router(chat.router) # Fallback for non-prefixed calls
 
 
 @app.get("/")
