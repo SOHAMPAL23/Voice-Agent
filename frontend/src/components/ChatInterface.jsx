@@ -2,45 +2,18 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mic, MicOff, Send, Sparkles, Loader2, Brain, WifiOff } from 'lucide-react';
-import { sendChatMessage, sendAudioMessage } from '../services/api';
+import { sendChatMessage } from '../services/api';
+import { useVoice } from '../hooks/useVoice';
 
 export default function ChatInterface() {
-  const { chatHistory, isProcessing, addChatMessage, setIsProcessing, setIsListening, isListening, setTodos, setMemories } = useAppStore();
+  const { chatHistory, isProcessing, addChatMessage, setIsProcessing, setTodos, setMemories } = useAppStore();
   const [inputText, setInputText] = useState('');
   const chatEndRef = useRef(null);
-  const recognitionRef = useRef(null);
+  const { isListening, startListening, stopListening } = useVoice();
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatHistory, isProcessing]);
-
-  // ── Voice Logic (Inline) ──────────────────────────────────────────────────
-  const startListening = () => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
-
-    const recognition = new SpeechRecognition();
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.lang = 'en-US';
-
-    recognition.onstart = () => setIsListening(true);
-    recognition.onend = () => setIsListening(false);
-
-    recognition.onresult = async (event) => {
-      const transcript = event.results[0][0].transcript;
-      if (transcript) {
-        await handleSend(transcript);
-      }
-    };
-
-    recognition.start();
-    recognitionRef.current = recognition;
-  };
-
-  const stopListening = () => {
-    if (recognitionRef.current) recognitionRef.current.stop();
-  };
 
   const handleSend = async (textOverride) => {
     const text = textOverride || inputText;
@@ -102,14 +75,22 @@ export default function ChatInterface() {
       </div>
 
       {/* Voice Only Interaction */}
-      <div className="p-8 border-t border-white/5 flex flex-col items-center gap-3">
+      <div className="p-8 border-t border-white/5 flex flex-col items-center gap-4 relative">
+        {/* Pulsing background effect when listening */}
+        {isListening && (
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 bg-red-500/20 rounded-full animate-ping pointer-events-none" />
+        )}
         <button
           onClick={isListening ? stopListening : startListening}
-          className={`p-6 rounded-full transition-all ${isListening ? 'bg-red-500 text-white scale-110 shadow-[0_0_25px_rgba(239,68,68,0.4)]' : 'bg-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.3)]'}`}
+          className={`relative z-10 p-6 rounded-full transition-all duration-300 ${
+            isListening 
+              ? 'bg-gradient-to-r from-red-500 to-rose-500 text-white scale-110 shadow-[0_0_35px_rgba(239,68,68,0.6)]' 
+              : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.4)] hover:scale-105 hover:shadow-[0_0_30px_rgba(37,99,235,0.6)]'
+          }`}
         >
           {isListening ? <MicOff size={28} /> : <Mic size={28} />}
         </button>
-        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+        <span className={`text-[11px] font-bold uppercase tracking-widest transition-colors duration-300 ${isListening ? 'text-red-400' : 'text-slate-500'}`}>
           {isListening ? 'Listening...' : 'Tap to Talk'}
         </span>
       </div>
