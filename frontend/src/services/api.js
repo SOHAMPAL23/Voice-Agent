@@ -2,6 +2,13 @@ import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 const api = axios.create({ baseURL: API_URL });
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.error(`[API Error] ${error.config?.method?.toUpperCase()} ${error.config?.url}:`, error.response?.status, error.message);
+    return Promise.reject(error);
+  }
+);
 
 // ─── Health ──────────────────────────────────────────────────────────────────
 export const checkHealth = async () => {
