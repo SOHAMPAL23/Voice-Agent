@@ -81,10 +81,15 @@ async def log_and_catch_exceptions(request: Request, call_next):
         )
 
 # Include routers
-# We include it twice or with prefix to handle both /api/chat and /chat if rewrites vary
-app.include_router(chat.router, prefix="/api")
-app.include_router(chat.router) # Fallback for non-prefixed calls
+# Use prefix='/api' for all chat routes. 
+# We also include it without prefix to handle cases where the rewrite strips '/api'
+app.include_router(chat.router, prefix="/api", tags=["api"])
+app.include_router(chat.router, tags=["chat"])
 
+@app.get("/api/health")
+def api_health():
+    """Explicit health check for /api/health to ensure visibility."""
+    return {"status": "ok", "source": "api_prefix"}
 
 @app.get("/")
 def root():
