@@ -85,6 +85,13 @@ export const useAppStore = create((set, get) => ({
       const res = await sendAudioMessage(audioBlob, transcript, history);
       
       addChatMessage({ role: 'agent', content: res.response });
+
+      // Speak the response
+      if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(res.response.replace(/[*_~`]/g, ''));
+        window.speechSynthesis.speak(utterance);
+      }
       
       const [t, m] = await Promise.all([fetchTodos(), fetchMemories()]);
       set({ todos: t, memories: m });
