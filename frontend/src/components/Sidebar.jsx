@@ -1,11 +1,17 @@
 import React from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Circle, BrainCircuit, Trash2, Calendar, Sparkles } from 'lucide-react';
+import { 
+  CheckCircle2, BrainCircuit, Trash2, 
+  Layers, History, Zap, Shield, ChevronRight
+} from 'lucide-react';
 import { patchTodo, deleteTodoApi, deleteMemoryApi, fetchTodos, fetchMemories } from '../services/api';
 
 export default function Sidebar() {
-  const { todos, memories, setTodos, setMemories, optimisticToggleTodo, optimisticDeleteTodo, addToast } = useAppStore();
+  const { 
+    todos, memories, setTodos, setMemories, 
+    optimisticToggleTodo, optimisticDeleteTodo, addToast 
+  } = useAppStore();
 
   const refresh = async () => {
     try {
@@ -22,7 +28,7 @@ export default function Sidebar() {
       await refresh();
     } catch {
       optimisticToggleTodo(todo.id);
-      addToast('Update failed', 'error');
+      addToast('Sync failed', 'error');
     }
   };
 
@@ -32,62 +38,120 @@ export default function Sidebar() {
       await deleteTodoApi(todo.id);
       await refresh();
     } catch {
-      addToast('Delete failed', 'error');
+      addToast('Purge failed', 'error');
       await refresh();
     }
   };
 
-  const pending = todos.filter(t => !t.completed);
+  const pendingCount = todos.filter(t => !t.completed).length;
 
   return (
-    <div className="w-80 h-full flex flex-col gap-6 flex-shrink-0">
-      {/* Tasks Section */}
-      <div className="flex-1 glass-panel rounded-3xl p-5 flex flex-col min-h-0">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2 text-white">
-            <Sparkles size={18} className="text-blue-400" />
-            <h2 className="font-bold">Tasks</h2>
+    <div className="sidebar-container">
+      {/* Task Section */}
+      <section className="sidebar-section glass">
+        <div className="sidebar-header">
+          <div className="header-title">
+            <Layers size={18} className="text-blue-400" />
+            <h3 className="font-display">Task Queue</h3>
           </div>
-          <span className="text-xs text-slate-500">{pending.length} Active</span>
+          <span className="badge">{pendingCount} Active</span>
         </div>
 
-        <div className="overflow-y-auto flex-1 space-y-2 pr-2 scrollbar-thin">
-          {todos.map(todo => (
-            <motion.div
-              layout
-              key={todo.id}
-              className="p-3 rounded-xl bg-white/5 border border-white/5 flex items-start gap-3 group"
-            >
-              <button onClick={() => handleToggle(todo)} className="mt-0.5">
-                {todo.completed ? <CheckCircle2 size={18} className="text-emerald-500" /> : <Circle size={18} className="text-slate-600" />}
-              </button>
-              <div className="flex-1">
-                <p className={`text-sm ${todo.completed ? 'text-slate-500 line-through' : 'text-slate-200'}`}>{todo.task}</p>
-                {todo.scheduled_time && <p className="text-[10px] text-slate-500 mt-1">{new Date(todo.scheduled_time).toLocaleString()}</p>}
-              </div>
-              <button onClick={() => handleDelete(todo)} className="opacity-0 group-hover:opacity-100 text-slate-600 hover:text-red-400">
-                <Trash2 size={14} />
-              </button>
-            </motion.div>
-          ))}
+        <div className="sidebar-content">
+          <AnimatePresence mode="popLayout">
+            {todos.length === 0 ? (
+              <EmptyState icon={<CheckCircle2 size={32} />} text="Queue Clear" />
+            ) : (
+              todos.map((todo, idx) => (
+                <motion.div
+                  key={todo.id}
+                  layout
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ delay: idx * 0.05 }}
+                  className={`task-item glass-card ${todo.completed ? 'completed' : ''}`}
+                >
+                  <button className="check-btn" onClick={() => handleToggle(todo)}>
+                    {todo.completed ? <CheckCircle2 size={16} /> : <div className="dot" />}
+                  </button>
+                  <span className="task-text">{todo.task}</span>
+                  <button className="delete-btn" onClick={() => handleDelete(todo)}>
+                    <Trash2 size={14} />
+                  </button>
+                </motion.div>
+              ))
+            )}
+          </AnimatePresence>
         </div>
-      </div>
+      </section>
 
       {/* Memory Section */}
-      <div className="h-64 glass-panel rounded-3xl p-5 flex flex-col min-h-0">
-        <div className="flex items-center gap-2 text-white mb-4">
-          <BrainCircuit size={18} className="text-purple-400" />
-          <h2 className="font-bold">Memory</h2>
+      <section className="sidebar-section glass">
+        <div className="sidebar-header">
+          <div className="header-title">
+            <BrainCircuit size={18} className="text-purple-400" />
+            <h3 className="font-display">Semantic Core</h3>
+          </div>
         </div>
-        <div className="overflow-y-auto flex-1 space-y-3 pr-2 scrollbar-thin">
-          {memories.map(mem => (
-            <div key={mem.id} className="p-3 rounded-xl bg-purple-500/5 border border-purple-500/10">
-              <p className="text-xs text-purple-200 italic">"{mem.content}"</p>
-              <button onClick={() => deleteMemoryApi(mem.id).then(refresh)} className="text-[10px] text-slate-600 hover:text-red-400 mt-2">Delete</button>
-            </div>
-          ))}
+
+        <div className="sidebar-content">
+          <AnimatePresence mode="popLayout">
+            {memories.length === 0 ? (
+              <EmptyState icon={<History size={32} />} text="No Memories" />
+            ) : (
+              memories.map((mem, idx) => (
+                <motion.div 
+                  key={mem.id} 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.1 }}
+                  className="memory-item glass-card"
+                >
+                  <div className="memory-indicator" />
+                  <p className="memory-text">{mem.content}</p>
+                  <button 
+                    className="memory-purge"
+                    onClick={() => deleteMemoryApi(mem.id).then(refresh)}
+                  >
+                    Purge
+                  </button>
+                </motion.div>
+              ))
+            )}
+          </AnimatePresence>
         </div>
-      </div>
+      </section>
+
+    </div>
+  );
+}
+
+function EmptyState({ icon, text }) {
+  return (
+    <div className="empty-state">
+      <div className="empty-icon">{icon}</div>
+      <p>{text}</p>
+      <style jsx>{`
+        .empty-state {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          height: 100%;
+          opacity: 0.2;
+          gap: 12px;
+        }
+        .empty-icon {
+          color: var(--text-primary);
+        }
+        p {
+          font-size: 10px;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 0.2em;
+        }
+      `}</style>
     </div>
   );
 }

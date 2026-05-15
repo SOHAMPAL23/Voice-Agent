@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { sendChatMessage, sendAudioMessage, fetchTodos, fetchMemories } from '../services/api';
 
 let toastId = 0;
 
@@ -20,7 +21,7 @@ export const useAppStore = create((set, get) => ({
   setIsProcessing:(v)        => set({ isProcessing: v }),
 
   addChatMessage: (msg) => set((state) => ({
-    chatHistory: [...state.chatHistory, { ...msg, id: crypto.randomUUID() }],
+    chatHistory: [...state.chatHistory, { ...msg, id: window.crypto?.randomUUID?.() || Date.now() + Math.random() }],
   })),
 
   // ─── Optimistic todo updates ──────────────────────────────────────────────
@@ -58,7 +59,6 @@ export const useAppStore = create((set, get) => ({
     setIsProcessing(true);
 
     try {
-      const { sendChatMessage, fetchTodos, fetchMemories } = await import('../services/api');
       const history = chatHistory.map(m => ({ role: m.role, content: m.content }));
       const res = await sendChatMessage(text, history);
       
@@ -80,8 +80,11 @@ export const useAppStore = create((set, get) => ({
     setIsProcessing(true);
 
     try {
-      const { sendAudioMessage, fetchTodos, fetchMemories } = await import('../services/api');
-      const history = chatHistory.map(m => ({ role: m.role, content: m.content }));
+      const history = chatHistory.map(m => ({ 
+        role: m.role, 
+        content: m.content 
+      }));
+      
       const res = await sendAudioMessage(audioBlob, transcript, history);
       
       addChatMessage({ role: 'agent', content: res.response });

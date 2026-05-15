@@ -5,7 +5,18 @@ const api = axios.create({ baseURL: API_URL });
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.error(`[API Error] ${error.config?.method?.toUpperCase()} ${error.config?.url}:`, error.response?.status, error.message);
+    const method = error.config?.method?.toUpperCase();
+    const url = error.config?.url;
+    const status = error.response?.status;
+    const detail = error.response?.data?.detail || error.response?.data?.message;
+    
+    console.error(`[API Error] ${method} ${url}:`, status, detail || error.message);
+    
+    // Create a user-friendly message
+    if (status === 429) error.message = "Nova is currently overwhelmed. Please wait a moment.";
+    else if (status === 404) error.message = "The requested resource was not found.";
+    else if (detail) error.message = detail;
+    
     return Promise.reject(error);
   }
 );
