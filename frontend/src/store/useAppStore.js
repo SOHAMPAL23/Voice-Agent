@@ -12,6 +12,7 @@ export const useAppStore = create((set, get) => ({
   // ─── UI state ────────────────────────────────────────────────────────────
   isListening:  false,
   isProcessing: false,
+  isMuted:      false,
   toasts:       [],
 
   // ─── Setters ─────────────────────────────────────────────────────────────
@@ -19,6 +20,7 @@ export const useAppStore = create((set, get) => ({
   setMemories:    (memories) => set({ memories }),
   setIsListening: (v)        => set({ isListening: v }),
   setIsProcessing:(v)        => set({ isProcessing: v }),
+  setIsMuted:     (v)        => set({ isMuted: v }),
 
   addChatMessage: (msg) => set((state) => ({
     chatHistory: [...state.chatHistory, { ...msg, id: window.crypto?.randomUUID?.() || Date.now() + Math.random() }],
@@ -89,13 +91,6 @@ export const useAppStore = create((set, get) => ({
       
       addChatMessage({ role: 'agent', content: res.response });
 
-      // Speak the response
-      if (window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(res.response.replace(/[*_~`]/g, ''));
-        window.speechSynthesis.speak(utterance);
-      }
-      
       const [t, m] = await Promise.all([fetchTodos(), fetchMemories()]);
       set({ todos: t, memories: m });
     } catch (err) {

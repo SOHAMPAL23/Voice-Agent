@@ -15,12 +15,12 @@ import TranscriptView from './TranscriptView';
 export default function ChatInterface() {
   const { 
     chatHistory, isProcessing, addChatMessage, 
-    setIsProcessing, setTodos, setMemories 
+    setIsProcessing, setTodos, setMemories,
+    isMuted, setIsMuted
   } = useAppStore();
   
   const [inputText, setInputText] = useState('');
   const [viewMode, setViewMode] = useState('orb'); // 'orb' | 'transcript'
-  const [isMuted, setIsMuted] = useState(false);
   const chatEndRef = useRef(null);
   
   const { isListening, startListening, stopListening, analyser } = useVoice();
@@ -79,8 +79,6 @@ export default function ChatInterface() {
       const res = await sendChatMessage(text, history);
       addChatMessage({ role: 'agent', content: res.response });
       
-      if (!isMuted) speak(res.response);
-
       const [t, m] = await Promise.all([fetchTodos(), fetchMemories()]);
       setTodos(t);
       setMemories(m);

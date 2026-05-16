@@ -9,6 +9,7 @@ import {
 import { useAppStore } from './store/useAppStore';
 import { fetchTodos, fetchMemories, checkHealth } from './services/api';
 import { useVoice } from './hooks/useVoice';
+import { useTTS } from './hooks/useTTS';
 
 // Components
 import TranscriptView from './components/TranscriptView';
@@ -24,8 +25,26 @@ function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isOffline, setIsOffline] = useState(false);
 
-  // Voice Interaction Hook
+  // Interaction Hooks
   const { isListening, startListening, stopListening, analyser } = useVoice();
+  const { speak, stop: stopTTS, isSpeaking } = useTTS();
+  const { isMuted } = useAppStore();
+
+  // Watch for new AI messages to speak them
+  useEffect(() => {
+    const lastMsg = chatHistory[chatHistory.length - 1];
+    if (lastMsg && lastMsg.role === 'agent' && !isSpeaking && !isMuted) {
+      speak(lastMsg.content);
+    }
+  }, [chatHistory, speak, isSpeaking, isMuted]);
+
+  // Unified state for visual components
+  const aiState = React.useMemo(() => {
+    if (isListening) return 'listening';
+    if (isProcessing) return 'thinking';
+    if (isSpeaking) return 'speaking';
+    return 'idle';
+  }, [isListening, isProcessing, isSpeaking]);
 
   useEffect(() => {
     const init = async () => {
@@ -52,7 +71,9 @@ function App() {
           <div className="content-grid">
             {/* Voice Interaction Core */}
             <section className="voice-core glass">
-              <VoiceOrb isListening={isListening} analyser={analyser} />
+              <div className="w-full h-80 relative flex items-center justify-center">
+                <VoiceOrb state={aiState} analyser={analyser} />
+              </div>
               <div className="voice-controls">
                 <button 
                   className={`mic-button ${isListening ? 'active' : ''} ${isProcessing ? 'processing' : ''}`}

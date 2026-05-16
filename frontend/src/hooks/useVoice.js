@@ -2,14 +2,20 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { useAppStore } from '../store/useAppStore';
 
 export function useVoice() {
+  const { sendAudioToNova, isProcessing, setIsListening: setStoreListening } = useAppStore();
   const [isListening, setIsListening] = useState(false);
   const [analyser, setAnalyser] = useState(null);
+  
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const audioContextRef = useRef(null);
   const streamRef = useRef(null);
-  
-  const { sendAudioToNova, isProcessing } = useAppStore();
+  const recordingStartTimeRef = useRef(0);
+
+  // Sync local isListening to store
+  useEffect(() => {
+    setStoreListening(isListening);
+  }, [isListening, setStoreListening]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -62,14 +68,16 @@ export function useVoice() {
       };
 
       mediaRecorder.onstop = async () => {
+        const duration = Date.now() - recordingStartTimeRef.current;
         const type = mediaRecorder.mimeType || 'audio/webm';
         const audioBlob = new Blob(audioChunksRef.current, { type });
         
-        if (audioBlob.size > 1000) {
+        // Ensure we have a minimum amount of data (0.5s or significant size)
+        if (duration > 500 && audioBlob.size > 2000) {
           await sendAudioToNova(audioBlob);
         }
 
-        // Cleanup
+        // Cleanup tracks
         stream.getTracks().forEach(track => track.stop());
         if (audioContext.state !== 'closed') {
           audioContext.close();
@@ -77,16 +85,16 @@ export function useVoice() {
         setAnalyser(null);
       };
 
-      mediaRecorder.start();
+      recordingStartTimeRef.current = Date.now();
+      mediaRecorder.start(200); // Collect data every 200ms
       mediaRecorderRef.current = mediaRecorder;
       setIsListening(true);
     } catch (err) {
       console.error("Microphone access error:", err);
-      if (err.name === 'NotAllowedError') {
-        alert("Microphone access denied. Please allow it in your browser settings.");
-      } else {
-        alert("Could not start voice recording. Please check your microphone.");
-      }
+      let msg = "Could not start voice recording.";
+      if (err.name === 'NotAllowedError') msg = "Microphone access denied. Please allow it.";
+      else if (err.name === 'NotFoundError') msg = "No microphone found.";
+      alert(msg);
     }
   }, [sendAudioToNova, isProcessing]);
 
